@@ -1,4 +1,11 @@
-cd ~/documents/MUD/Discworld
+#!/bin/bash
+
+set -x
+
+[ ! -d ./logs ] && mkdir logs
+[ -z "$(which tt++)" ] && echo "Could not find tt++ in PATH" && exit
+
+touch logs/chat.log logs/groupsheilds.log logs/mapdoortext.log logs/minimap.log logs/xptimers.log
 
 # No existing discworld session? Then create one
 if [[ ! $(tmux ls -F '#S') =~ discworld ]]; then
@@ -11,7 +18,7 @@ if [[ ! $(tmux ls -F '#S') =~ discworld ]]; then
     # rm logs/chat.log && touch logs/chat.log
     
     # Start a new tmux session named "discworld"
-    tmux new-session -d -A -D -s discworld
+    tmux new-session -d -A -D -x- -y- -s discworld
 fi
 
 # If we're in TMUX, or we just created a new session, make a layout
@@ -25,12 +32,13 @@ if [ -n "$TMUX" ] || [ "$DISC_SESSION_CREATE" = "1" ]; then
     # Create the chat monitor window on top
     tmux split-window -v -b -l 4
     tmux send-keys 'clear && tail -fs .5 logs/chat.log' 'C-m'
+    tmux select-pane -t discworld:0.1
 
     # Did we ask for the full layout?
     if [[ $1 == "full" ]]; then
         # Horizontal split and load spottimers
-        tmux select-pane -t discworld:0.0
-        tmux split-window -h -l 28
+        tmux select-pane -t discworld:0.1
+        tmux split-window -h -f -l 28
         tmux send-keys './bin/dt' 'C-m'
 
         # Splice a section for group shield monitor
@@ -43,13 +51,13 @@ if [ -n "$TMUX" ] || [ "$DISC_SESSION_CREATE" = "1" ]; then
     fi
 
     # Cut back to main window, vertical split for mapdoortext
-    tmux select-pane -t discworld:0.0
+    tmux select-pane -t discworld:0.1
     tmux split-window -v -b -l 5
     tmux send-keys './bin/mdt' 'C-m'
 
     # Select main pane again and load TinTin++ with our config
-    tmux select-pane -t discworld:0.0
-    tmux send-keys 'clear && tt++ -G config.tin' 'C-m'
+    tmux select-pane -t discworld:0.2
+    tmux send-keys 'clear && tt++ -G $(pwd)/config.tin' 'C-m'
 fi
 
 if [ -z "$TMUX" ]; then
